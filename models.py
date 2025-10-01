@@ -10,7 +10,7 @@ class SurveySubmission(BaseModel):
     rating: int = Field(..., ge=1, le=5)
     comments: Optional[str] = Field(None, max_length=1000)
     user_agent: Optional[str] = None
-  
+    submission_id: Optional[str] = None
 
     @validator("comments")
     def _strip_comments(cls, v):
