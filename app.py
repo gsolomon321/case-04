@@ -12,7 +12,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/v1/*": {"origins": "*"}})
 
 def hash_sha256(value:str) -> str:
-    return hash.lib.sha256(value.encode('utf-8')).hexdigest()
+    return hashlib.sha256(value.encode('utf-8')).hexdigest()
 
 class SurveySubmission(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)

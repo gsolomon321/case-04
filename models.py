@@ -23,6 +23,6 @@ class SurveySubmission(BaseModel):
         return v
         
 #Good example of inheritance
-class StoredSurveyRecord(SurveySubmission):
+class StoredSurveyRecord(BaseModel):
     received_at: datetime
     ip: str
