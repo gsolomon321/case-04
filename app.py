@@ -19,7 +19,7 @@ class SurveySubmission(BaseModel):
     consent: bool = True
     rating: int = Field(..., ge=1, le=5)
     comments: Optional[str] = Field(None, max_length=1000)
-    source: str = "other"
+    # source: str = "other"
     user_agent: Optional[str] = None
     submission_id: Optional[str] = None
 
@@ -29,7 +29,7 @@ class StoredSurveyRecord(BaseModel):
     consent: bool
     rating: int
     comments: Optional[str]
-    source: str
+    # source: str
     user_agent: Optional[str]
 
     hashed_email: str
@@ -80,15 +80,15 @@ def submit_survey():
 
     # Build StoredSurveyRecord object
     record = StoredSurveyRecord(
-        # name=submission.name,
-        # consent=submission.consent,
-        # rating=submission.rating,
-        # comments=submission.comments,
+        name=submission.name,
+        consent=submission.consent,
+        rating=submission.rating,
+        comments=submission.comments,
         # source=submission.source,
-        # user_agent=submission.user_agent,
-        # hashed_email=email_hash,
-        # hashed_age=age_hash,
-        # submission_id=submission_id,
+        user_agent=submission.user_agent,
+        hashed_email=email_hash,
+        hashed_age=age_hash,
+        submission_id=submission_id,
         received_at=datetime.now(timezone.utc),
         ip=request.headers.get("X-Forwarded-For", request.remote_addr or "")
     )
