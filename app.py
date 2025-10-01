@@ -7,6 +7,7 @@ from flask_cors import CORS
 from pydantic import BaseModel, Field, EmailStr, ValidationError
 from typing import Optional
 
+
 app = Flask(__name__)
 CORS(app, resources={r"/v1/*": {"origins": "*"}})
 
@@ -21,6 +22,22 @@ class SurveySubmission(BaseModel):
     source: str = "other"
     user_agent: Optional[str] = None
     submission_id: Optional[str] = None
+
+
+class StoredSurveyRecord(BaseModel):
+    name: str
+    consent: bool
+    rating: int
+    comments: Optional[str]
+    source: str
+    user_agent: Optional[str]
+
+    hashed_email: str
+    hashed_age: str
+    submission_id: str
+
+    received_at: datetime
+    ip: str
 
 
 def append_json_line(record: dict, filename="data/survey.ndjson"):
@@ -50,49 +67,34 @@ def submit_survey():
     except ValidationError as ve:
         return jsonify({"error": "validation_error", "detail": ve.errors()}), 422
 
-    # Hash PII fields (email and age)
+    # Hash PII fields
     email_hash = hashlib.sha256(submission.email.encode()).hexdigest()
     age_hash = hashlib.sha256(str(submission.age).encode()).hexdigest()
 
-    hour_stamp = datatime.now(timezone.utc).strftime("%Y%m%d%H")
-    submission_id = submission.submission_id or sha256_hex(email_norm + hour_stamp)
-
-    record = StoredSurveyRecord(
-        name = submission.name,
-        consent = submission.consent,
-        rating = submission.rating,
-        comments = submission.comments,
-        source = submission.source,
-        user_agent = submission.user_agent,
-
-        hashed_email = hashed_email,
-        hashed_age = hashed_age,
-        submission_id = submission_id,
-
-        recieved_at = datatime.now(timezone.utc),
-        ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
-    )
-
-    # Compute submission_id if missing: sha256(email + YYYYMMDDHH)
+    # Compute submission_id if missing
     if not submission.submission_id:
-        now_str = datetime.utcnow().strftime("%Y%m%d%H")
+        now_str = datetime.now(timezone.utc).strftime("%Y%m%d%H")
         submission_id = hashlib.sha256((submission.email + now_str).encode()).hexdigest()
     else:
         submission_id = submission.submission_id
 
-    # Build the record to save (never store raw email or age)
-    record = submission.dict()
-    record["email"] = email_hash
-    record["age"] = age_hash
-    record["submission_id"] = submission_id
+    # Build StoredSurveyRecord object
+    record = StoredSurveyRecord(
+        name=submission.name,
+        consent=submission.consent,
+        rating=submission.rating,
+        comments=submission.comments,
+        source=submission.source,
+        user_agent=submission.user_agent,
+        hashed_email=email_hash,
+        hashed_age=age_hash,
+        submission_id=submission_id,
+        received_at=datetime.now(timezone.utc),
+        ip=request.headers.get("X-Forwarded-For", request.remote_addr or "")
+    )
 
-    # Add metadata
-    record["received_at"] = datetime.now(timezone.utc).isoformat()
-    record["ip"] = request.headers.get("X-Forwarded-For", request.remote_addr or "")
-    record["user_agent"] = request.headers.get("User-Agent", submission.user_agent)
-
-    # Save the record to file (append-only)
-    append_json_line(record)
+    # Save the record to file
+    append_json_line(record.dict())
 
     return jsonify({"status": "ok"}), 201
 
