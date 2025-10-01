@@ -57,6 +57,22 @@ def submit_survey():
     hour_stamp = datatime.now(timezone.utc).strftime("%Y%m%d%H")
     submission_id = submission.submission_id or sha256_hex(email_norm + hour_stamp)
 
+    record = StoredSurveyRecord(
+        name = submission.name,
+        consent = submission.consent,
+        rating = submission.rating,
+        comments = submission.comments,
+        source = submission.source,
+        user_agent = submission.user_agent,
+
+        hashed_email = hashed_email,
+        hashed_age = hashed_age,
+        submission_id = submission_id,
+
+        recieved_at = datatime.now(timezone.utc),
+        ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+    )
+
     # Compute submission_id if missing: sha256(email + YYYYMMDDHH)
     if not submission.submission_id:
         now_str = datetime.utcnow().strftime("%Y%m%d%H")
