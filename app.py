@@ -54,6 +54,9 @@ def submit_survey():
     email_hash = hashlib.sha256(submission.email.encode()).hexdigest()
     age_hash = hashlib.sha256(str(submission.age).encode()).hexdigest()
 
+    hour_stamp = datatime.now(timezone.utc).strftime("%Y%m%d%H")
+    submission_id = submission.submission_id or sha256_hex(email_norm + hour_stamp)
+
     # Compute submission_id if missing: sha256(email + YYYYMMDDHH)
     if not submission.submission_id:
         now_str = datetime.utcnow().strftime("%Y%m%d%H")
